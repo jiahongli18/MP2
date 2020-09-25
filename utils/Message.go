@@ -1,7 +1,7 @@
 package utils
 
 type Message struct {
-	To      string
-	From    string
+	Sender      string
+	Receiver    string
 	Content string
 }

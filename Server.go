@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 )
-
+//Starts the listening side from the server
 func StartServer(channel chan string) {
 	arguments := os.Args
 	if len(arguments) == 1 {
@@ -26,11 +26,13 @@ func StartServer(channel chan string) {
 
 	//Accept multiple client connections concurrently
 	for {
+		fmt.Println("h")
 		c, err := l.Accept()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+
 		go handleConnection(c, channel)
 	}
 
@@ -49,7 +51,7 @@ func checkConn(arr []string, str string) bool {
 //TODO:A thread to handle the communication with each client
 func handleConnection(c net.Conn, channel chan string) {
 	var clients []string
-	fmt.Print(".")
+	fmt.Print("..")
 	for {
 		decoder := gob.NewDecoder(c)
 		message := new(utils.Message)
@@ -64,6 +66,7 @@ func handleConnection(c net.Conn, channel chan string) {
 		if result == true {
 			//Create a gob encoder to send message to the client
 			encoderMsg := gob.NewEncoder(c)
+			fmt.Println(clients)
 			_ = encoderMsg.Encode(message.Content)
 		}
 		if result == false {
@@ -73,7 +76,8 @@ func handleConnection(c net.Conn, channel chan string) {
 		signal := <-channel
 		if signal == "Termination" {
 			fmt.Print("Received")
-			break
+
+			return
 		}
 		/*netData, err := bufio.NewReader(c).ReadString('\n')
 		if err != nil {
@@ -111,8 +115,9 @@ func Exit(channel chan string) {
 
 func main() {
 	channel := make(chan string)
-	//StartServer(channel)
+	go StartServer(channel)
 	go Exit(channel)
-	ter := <-channel
-	fmt.Println(ter)
+	fmt.Println(<-channel)
+	//go StartServer(channel)
+
 }

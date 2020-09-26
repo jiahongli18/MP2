@@ -19,19 +19,19 @@ func main() {
 
 	//connect to provided host:post via the net library
 	c := TCPDial(arguments)
-  
+  go listen(c)
 
   for {
     sender, receiver, content := getUserInput()
     msg := utils.Message{sender, receiver, content}
 
     messaging(msg, c)
-    listen(c)
   }
 }
 
 func listen(c net.Conn) {
-     decoder := gob.NewDecoder(c) //initialize gob decoder
+  for {
+    decoder := gob.NewDecoder(c) //initialize gob decoder
 	  //Decode message struct and print it
 	  message := new(utils.Message)
 	  _ = decoder.Decode(message)
@@ -40,9 +40,10 @@ func listen(c net.Conn) {
       fmt.Printf("Error: the person you are sending to has not been connected yet.\n")
     } else {
       fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
+      fmt.Printf("Sender: ")
     }
+  }
 
-    
 }
 
 func messaging(msg utils.Message, c net.Conn) {

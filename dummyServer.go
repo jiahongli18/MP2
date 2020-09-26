@@ -69,7 +69,10 @@ func handleConnection(c net.Conn,m map[string]net.Conn) {
 			// fmt.Println(receiverChannel, "is in map")
 			encoder := gob.NewEncoder(receiverChannel)
 			msg := utils.Message{message.Sender, message.Receiver, message.Content}
-
+			encoder.Encode(msg)
+		} else {
+			encoder := gob.NewEncoder(c)
+			msg := utils.Message{"error", "error", "error"}
 			encoder.Encode(msg)
 		}
 	}

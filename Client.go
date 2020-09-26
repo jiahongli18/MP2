@@ -32,12 +32,17 @@ func main() {
 
 func listen(c net.Conn) {
      decoder := gob.NewDecoder(c) //initialize gob decoder
-    
 	  //Decode message struct and print it
 	  message := new(utils.Message)
 	  _ = decoder.Decode(message)
 
-    fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
+    if(*message == utils.Message{"error","error","error"}) {
+      fmt.Printf("Error: the person you are sending to has not been connected yet.\n")
+    } else {
+      fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
+    }
+
+    
 }
 
 func messaging(msg utils.Message, c net.Conn) {

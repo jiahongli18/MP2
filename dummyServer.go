@@ -5,11 +5,23 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"bufio"
+	"strings"
+	"log"
 	"./utils"
 )
 
-//Start a Process B that acts like a TCP server
 func main() {
+	channel := make(chan string)
+	go startServer()
+	go exit(channel)
+	signal := <-channel
+	if signal == "Termination" {
+		return
+	}
+}
+
+func startServer() {
 	//Scan and Parse in line argument for the port number
 	arguments := os.Args
 	if len(arguments) == 1 {
@@ -28,6 +40,9 @@ func main() {
 	}
 	defer l.Close()
 
+	username := ""
+	m := make(map[string]net.Conn)
+
 	for {
 		//The server accepts and begins to interact with TCP client
 		c, err := l.Accept()
@@ -35,14 +50,56 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		decoder := gob.NewDecoder(c) //initialize gob decoder
+		
+		netData, _ := bufio.NewReader(c).ReadString('\n')
+		username = netData
+		m[username] = c
 
-		//Decode message struct and print it
-		message := new(utils.Message)
-		_ = decoder.Decode(message)
-		fmt.Printf("Sender : %+v \nReceiver : %+v \nContent : %+v", message.Sender, message.Receiver, message.Content)
-
-		// return
+		go handleConnection(c, m)
 	}
-
 }
+
+func handleConnection(c net.Conn,m map[string]net.Conn) {
+	decoder := gob.NewDecoder(c) //initialize gob decoder
+
+	//Decode message struct and print it
+	message := new(utils.Message)
+	_ = decoder.Decode(message)
+
+	encoder := gob.NewEncoder(c)
+
+	if val, ok := m[message.Receiver]; ok {
+    	// fmt.Println(val, "is in map")
+		msgEncoder := gob.NewEncoder(val)
+		msg := utils.Message{message.Sender, message.Receiver, message.Content}
+
+		for {
+			err := msgEncoder.Encode(msg)
+			if err != nil {
+				log.Fatal("encode error:", err)
+			} else {
+				break
+			}
+		}
+
+		encoder.Encode("success")
+	} else {
+    	encoder.Encode("error")
+	}
+}
+
+func exit(channel chan string) {
+	fmt.Println("Waiting for exit command...")
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		var cmd string
+		cmd, _ = reader.ReadString('\n')
+		if strings.TrimSpace(cmd) == "EXIT" {
+			fmt.Println("Server is exiting...")
+			//Sends the termination signal to all the connected clients
+			channel <- "Termination"
+			return
+		}
+	}
+}
+

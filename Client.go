@@ -19,7 +19,7 @@ func main() {
 	//Scan user input for host:port
 	arguments := os.Args
 	if len(arguments) == 1 {
-		fmt.Println("Please provide host:port.")
+		fmt.Println("Please provide host:port and the username.")
 		return
 	}
 
@@ -30,6 +30,9 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
+  username := arguments[2]
+  fmt.Fprintf(c, username + "\n")
 
   for {
     //scan user input for message contents
@@ -54,5 +57,18 @@ func main() {
     encoder := gob.NewEncoder(c)
     msg := utils.Message{sender, receiver, content}
     _ = encoder.Encode(msg)
+
+    decoder := gob.NewDecoder(c) //initialize gob decoder
+
+	  //Decode message struct and print it
+	  message := new(string)
+	  _ = decoder.Decode(message)
+
+    for {
+		  if (*message == "error") {
+			  fmt.Printf("Error: The person you are sending to isn't connected yet. Please try again soon.\n")
+		  }
+      break
+	  }
   }
 }

@@ -31,6 +31,7 @@ func StartServer(channel chan string) {
 			fmt.Println(err)
 			return
 		}
+		// netData, err := bufio.NewReader(c).ReadString('\n')
 		go handleConnection(c, channel)
 	}
 
@@ -111,7 +112,7 @@ func Exit(channel chan string) {
 
 func main() {
 	channel := make(chan string)
-	//StartServer(channel)
+	StartServer(channel)
 	go Exit(channel)
 	ter := <-channel
 	fmt.Println(ter)

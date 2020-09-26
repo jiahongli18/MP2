@@ -37,11 +37,12 @@ func listen(c net.Conn) {
 	  _ = decoder.Decode(message)
 
     if(*message == utils.Message{"error","error","error"}) {
-      fmt.Printf("Error: the person you are sending to has not been connected yet.\n")
+      fmt.Printf("\nError: the person you are sending to has not been connected yet.\n")
     } else {
       fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
-      fmt.Printf("Sender: ")
     }
+
+    fmt.Printf("Sender: ")
   }
 
 }

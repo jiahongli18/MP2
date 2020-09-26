@@ -7,7 +7,7 @@ import (
 	"os"
 	"bufio"
 	"strings"
-	"log"
+	// "log"
 	"./utils"
 )
 
@@ -61,28 +61,21 @@ func startServer() {
 
 func handleConnection(c net.Conn,m map[string]net.Conn) {
 	decoder := gob.NewDecoder(c) //initialize gob decoder
-
-	//Decode message struct and print it
-	message := new(utils.Message)
-	_ = decoder.Decode(message)
-
 	encoder := gob.NewEncoder(c)
 
+	message := new(utils.Message)
+	_ = decoder.Decode(message)
+	
+	fmt.Println(c)
+	fmt.Println(m[message.Sender])
+
 	if val, ok := m[message.Receiver]; ok {
-    	// fmt.Println(val, "is in map")
-		msgEncoder := gob.NewEncoder(val)
-		msg := utils.Message{message.Sender, message.Receiver, message.Content}
+    fmt.Println(val, "is in map")
+	encoder2 := gob.NewEncoder(val)
+	// msg := utils.Message{message.Sender, message.Receiver, message.Content}
 
-		for {
-			err := msgEncoder.Encode(msg)
-			if err != nil {
-				log.Fatal("encode error:", err)
-			} else {
-				break
-			}
-		}
-
-		encoder.Encode("success")
+	// encoder2.Encode(msg)
+	encoder2.Encode(message.Content)
 	} else {
     	encoder.Encode("error")
 	}

@@ -63,11 +63,13 @@ func main() {
 	  //Decode message struct and print it
 	  message := new(string)
 	  _ = decoder.Decode(message)
-
+    
     for {
 		  if (*message == "error") {
 			  fmt.Printf("Error: The person you are sending to isn't connected yet. Please try again soon.\n")
-		  }
+		  } else {
+        fmt.Printf(*message)
+      }
       break
 	  }
   }

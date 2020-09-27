@@ -17,9 +17,9 @@ go run Client.go 127.0.0.1:6000 Jack
 go run Client.go 127.0.0.1:6000 Alice
 ```
 
-Once the clients started, there will be input instructions for sending a text or exit the chatroom. The sender should be the same with the username. For example:
+At this point, you should be prompted to input information:
 ```bash
-Type EXIT if you want to leave. Press anything else to continue. return
+Type EXIT if you want to leave.
 
 Sender: Jack
 Receiver: Alice
@@ -38,13 +38,12 @@ Received message from Jack
 
 Message: hi
 
-Type EXIT or enter Sender: 
+Sender: 
 ```
 
-The server can exit with the command line input "EXIT", and it will send termination signal to all the connected clients to make them exit. (TODO)
+The server can exit with the command line input "EXIT", and it will send termination signal to all the connected clients to make them exit.
 ```bash
-Waiting for exit command...
-Listening on port:6000
+Listening on port:6000. Please type 'EXIT' to quit.
 EXIT
 Server is exiting...
 ```
@@ -56,10 +55,29 @@ EXIT
 Client "Alice" is exiting...
 ```
 ## Structure and Design
-The server has a thread for the TCP listening, and inside the thread it uses client thread to handle the communication with each client.
-The server has a separate thread that waits for an "EXIT" command.
+#### There are two layers in our design: application layer and the network layer:
 
-In the client program, each client uses a goroutine as a thread. 
+
+### 1) Network Layer 
+* Our networking layer is located in Server.go. We start two goroutines within main.go. The first one is called `startServer()` and the second is `exit()`
+
+* `startServer()` creates the TCP connection and listen on provided port for requests. It stores the username of the client's in a map as a key, and the channel as the associating value. We use a map so that we are able to know which channel we have to redirect messages to(message's receiver). For each connection, we call a goroutine to handle the communication so that the server can support handling multiple concurrent clients.
+
+* `exit()` is used to wait for an EXIT command from the command line. If this command is detected, then a channel is used to communicate this information with the main thread. Then the main thread sends the signal to all other TCP channels to terminates those, and finally terminates itself.
+
+
+### 2) Application Layer 
+* Our application code is located in `Client.go`.
+
+* `Client.go` starts by dialing via TCP to the ip and port included in the user input. After this is done, it calls a go routine called `listen()`
+
+* `listen()` is used as a goroutine so that it can handling incoming requests from the server concurrently. It also has communicates with the main thread using a channel in case the server sends the "EXIT" signal.
+
+* If the client receives the "EXIT" signal from the server, then it terminates.
+
+* The rest of the application is reading user input from `getUserInput()`, which fetches the "Sender,Receiver, and Content" for each message. If "EXIT" is received from the user input, then this function sends a signal to the main function to terminate this process.
+
+* Once the user input is received for a message, the message is converted into a struct `Message` and sent through the TCP channel through gob in a function called `messaging()`.
 
 ### Message
 ```bash
@@ -83,6 +101,7 @@ We also abstract helper functions such as userExit() for the clients to exit, ex
 ## Resources
 * [TCP Concurrent Server](https://www.linode.com/docs/development/go/developing-udp-and-tcp-clients-and-servers-in-go/)
 * [Gob](https://golang.org/pkg/encoding/gob/)
+* Sean's group for the idea to use map for storing channels and usernames.
 ## Authors
 * Jiahong Li
 * Zheng Zhou

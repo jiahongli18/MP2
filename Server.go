@@ -20,7 +20,7 @@ func main() {
 	go exit(channel)
 	signal := <-channel
 
-	//upon receiving signal to exit, terminates process and channels with other clients as well by calling exitAllClients()
+	//upon receiving signal to exit, terminates process and channels with other clients as well by calling exitAllClients
 	if signal == "EXIT" {
 		exitAllClients(m)
 		return

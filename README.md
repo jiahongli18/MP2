@@ -19,7 +19,7 @@ go run Client.go 127.0.0.1:6000 Alice
 
 Once the clients started, there will be input instructions for sending a text or exit the chatroom. The sender should be the same with the username. For example:
 ```bash
-Type EXIT if you want to leave. Press anything else to continue. Space
+Type EXIT if you want to leave. Press anything else to continue. return
 
 Sender: Jack
 Receiver: Alice

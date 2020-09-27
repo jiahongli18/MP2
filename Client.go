@@ -7,44 +7,54 @@ import (
 	"net"
 	"os"
   "./utils"
+	"strings"
 )
 
 func main() {
 	//Scan user input for host:port
 	arguments := os.Args
-	if len(arguments) == 1 {
+	if len(arguments) != 3 {
 		fmt.Println("Please provide host:port and the username.")
 		return
 	}
-
+	fmt.Print("Type EXIT if you want to leave. Press anything else to continue.\n")
 	//connect to provided host:post via the net library
 	c := TCPDial(arguments)
-  go listen(c)
 
-  for {
-    sender, receiver, content := getUserInput()
-    msg := utils.Message{sender, receiver, content}
+	go listen(c)
 
-    messaging(msg, c)
-  }
+	for {
+		if "EXIT" == userExit() {
+			return
+		}
+		sender, receiver, content := getUserInput()
+
+		msg := utils.Message{sender, receiver, content}
+
+		messaging(msg, c)
+	}
+
 }
 
-func listen(c net.Conn) {
+func listen(c net.Conn){
   for {
-    decoder := gob.NewDecoder(c) //initialize gob decoder
+	  decoder := gob.NewDecoder(c) //initialize gob decoder
 	  //Decode message struct and print it
 	  message := new(utils.Message)
 	  _ = decoder.Decode(message)
 
-    if(*message == utils.Message{"error","error","error"}) {
-      fmt.Printf("\nError: the person you are sending to has not been connected yet.\n")
-    } else {
-      fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
-    }
-
-    fmt.Printf("Sender: ")
+	  //TODO:Receive the termination signal and stop listening
+	  if (*message == utils.Message{"STOP", "STOP", "STOP"}){
+	  	fmt.Print("hi")
+	  	return
+	  } else if(*message == utils.Message{"error", "error", "error"}) {
+		  fmt.Printf("\nError: the person you are sending to has not been connected yet.\n")
+		  fmt.Printf("Type EXIT or enter Sender: ")
+	  } else {
+		  fmt.Printf("Received message from %s\nMessage: %s\n", message.Sender, message.Content)
+		  fmt.Printf("Type EXIT or enter Sender: ")
+	  }
   }
-
 }
 
 func messaging(msg utils.Message, c net.Conn) {
@@ -67,18 +77,33 @@ func TCPDial(arguments []string)(c net.Conn) {
   return c
 }
 
+//Gets the sender, receiver and message content from the user input
 func getUserInput()(sender string, receiver string, content string) {
-    reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 
-    //scan user input for message contents
-    fmt.Print("Sender: ")
-    sender, _ = reader.ReadString('\n')
+	//scan user input for message contents
+	fmt.Print("Sender: ")
+	sender, _ = reader.ReadString('\n')
 
-    fmt.Print("Receiver: ")
-    receiver, _ = reader.ReadString('\n')
+	fmt.Print("Receiver: ")
+	receiver, _ = reader.ReadString('\n')
 
-    fmt.Print("Message content: ")
-    content, _ = reader.ReadString('\n')
+	fmt.Print("Message content: ")
+	content, _ = reader.ReadString('\n')
 
-    return sender,receiver,content
+	return sender, receiver, content
+}
+
+//Exit the client program after getting the user command
+func userExit()(exit string){
+	arguments := os.Args
+
+	reader := bufio.NewReader(os.Stdin)
+	var cmd string
+	cmd, _ = reader.ReadString('\n')
+	if strings.TrimSpace(cmd) == "EXIT" {
+		fmt.Printf("Client %q is exiting...\n", arguments[2])
+		return "EXIT"
+	}
+	return " "
 }

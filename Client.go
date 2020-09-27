@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+  "strings"
   "./utils"
 )
 
@@ -19,17 +20,28 @@ func main() {
 
 	//connect to provided host:post via the net library
 	c := TCPDial(arguments)
-  go listen(c)
+  channel := make(chan string)
+
+  go listen(c, channel)
 
   for {
-    sender, receiver, content := getUserInput()
-    msg := utils.Message{sender, receiver, content}
-
-    messaging(msg, c)
+    select {
+      case signal := <-channel:
+        if (signal == "EXIT") {
+          return
+        }
+      default:
+        sender, receiver, content := getUserInput()
+        if (content == "EXIT") {
+          return
+        }
+        msg := utils.Message{sender, receiver, content}
+        messaging(msg, c)
+      }
   }
 }
 
-func listen(c net.Conn) {
+func listen(c net.Conn, channel chan string){
   for {
     decoder := gob.NewDecoder(c) //initialize gob decoder
 	  //Decode message struct and print it
@@ -39,12 +51,14 @@ func listen(c net.Conn) {
     if(*message == utils.Message{"error","error","error"}) {
       fmt.Printf("\nError: the person you are sending to has not been connected yet.\n")
       fmt.Printf("Sender: ")
+    } else if (*message == utils.Message{"EXIT","EXIT","EXIT"}) {
+      c.Close()
+      channel <- "EXIT"
     } else if (message.Content != "") {
-      fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
+      fmt.Printf("Received message from %q\nMessage: %s\n", strings.TrimSpace(message.Sender), strings.TrimSpace(message.Content))
       fmt.Printf("Sender: ")
     }
   }
-
 }
 
 func messaging(msg utils.Message, c net.Conn) {
@@ -73,12 +87,24 @@ func getUserInput()(sender string, receiver string, content string) {
     //scan user input for message contents
     fmt.Print("Sender: ")
     sender, _ = reader.ReadString('\n')
+    if strings.TrimSpace(sender) == "EXIT" {
+		  return "EXIT", "EXIT", "EXIT"
+	  }
 
     fmt.Print("Receiver: ")
     receiver, _ = reader.ReadString('\n')
+    if strings.TrimSpace(receiver) == "EXIT" {
+		  return "EXIT", "EXIT", "EXIT"
+	  }
 
     fmt.Print("Message content: ")
     content, _ = reader.ReadString('\n')
+    if strings.TrimSpace(content) == "EXIT" {
+		  return "EXIT", "EXIT", "EXIT"
+	  }
 
     return sender,receiver,content
 }
+
+
+	

@@ -18,12 +18,15 @@ func main() {
 		return
 	}
 	fmt.Print("Type EXIT if you want to leave.\n")
+
 	//connect to provided host:post via the net library
 	c := TCPDial(arguments)
   channel := make(chan string)
 
   go listen(c, channel)
 
+  //wait for input from channel, if "EXIT" command is received, then terminate.
+  //If not signal is received, then get user input.
   for {
     select {
       case signal := <-channel:
@@ -41,6 +44,7 @@ func main() {
   }
 }
 
+//The listen function waits on messages from the TCP server.
 func listen(c net.Conn, channel chan string){
   for {
 	  decoder := gob.NewDecoder(c) //initialize gob decoder
@@ -61,12 +65,14 @@ func listen(c net.Conn, channel chan string){
   }
 }
 
+//Function is used to encode and send messages across TCP using gob.
 func messaging(msg utils.Message, c net.Conn) {
   //create a gob encoder and code the message struct
     encoder := gob.NewEncoder(c)
     _ = encoder.Encode(msg)
 }
 
+//Function is used to connect to the TCP channel using the net library.
 func TCPDial(arguments []string)(c net.Conn) {
   CONNECT := arguments[1]
 	c, err := net.Dial("tcp", CONNECT)

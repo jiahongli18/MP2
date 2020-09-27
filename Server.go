@@ -11,19 +11,26 @@ import (
 )
 
 func main() {
+	//Declare a map to be used for storing the client's username and the associating TCP channel.
 	var m = make(map[string]net.Conn)
 
+	//Channel used to communicate between EXIT goroutine
 	channel := make(chan string)
 	go startServer(m)
 	go exit(channel)
 	signal := <-channel
+
+	//upon receiving signal to exit, terminates process and channels with other clients as well by calling exitAllClients()
 	if signal == "EXIT" {
 		exitAllClients(m)
 		return
 	}
 }
 
+//This function creates the TCP connection and listen on provided port for requests.
+//It stores the username of the client's in a map as a key, and the channel as the associating value.
 func startServer(m map[string]net.Conn) {
+	username := ""
 	//Scan and Parse in line argument for the port number
 	arguments := os.Args
 	if len(arguments) == 1 {
@@ -31,7 +38,6 @@ func startServer(m map[string]net.Conn) {
 		return
 	}
 
-	//Create TCP connection and listen on provided port for requests
 	PORT := ":" + arguments[1]
 	l, err := net.Listen("tcp", PORT)
 	if err != nil {
@@ -41,8 +47,6 @@ func startServer(m map[string]net.Conn) {
 		fmt.Println("Listening on port" + PORT + ". Please type 'EXIT' to quit.")
 	}
 	defer l.Close()
-
-	username := ""
 
 	for {
 		//The server accepts and begins to interact with TCP client
@@ -56,10 +60,12 @@ func startServer(m map[string]net.Conn) {
 		username = netData
 		m[username] = c
 
+		//Call a goroutine to handle the communication so that the server can support handling multiple concurrent clients.
 		go handleConnection(c, m)
 	}
 }
 
+//Listens on incoming requests from each client, redirects message to the receiver by iterating through map to find the associating channel.
 func handleConnection(c net.Conn,m map[string]net.Conn) {
 	for {
 		decoder := gob.NewDecoder(c) //initialize gob decoder
@@ -71,6 +77,7 @@ func handleConnection(c net.Conn,m map[string]net.Conn) {
 			msg := utils.Message{message.Sender, message.Receiver, message.Content}
 			encoder.Encode(msg)
 		} else {
+			//Send error message if client is not connected yet.
 			encoder := gob.NewEncoder(c)
 			msg := utils.Message{"error", "error", "error"}
 			encoder.Encode(msg)
@@ -78,6 +85,7 @@ func handleConnection(c net.Conn,m map[string]net.Conn) {
 	}
 }
 
+//Send message to all clients in the map to terminate
 func exitAllClients(m map[string]net.Conn) {
 	for _, receiverChannel := range m {
         encoder := gob.NewEncoder(receiverChannel)
@@ -86,6 +94,7 @@ func exitAllClients(m map[string]net.Conn) {
     }
 }
 
+//Read user input for "EXIT" command, upon receiving, send signal back to main thread to exit
 func exit(channel chan string) {
 	for {
 		reader := bufio.NewReader(os.Stdin)

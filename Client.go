@@ -38,11 +38,11 @@ func listen(c net.Conn) {
 
     if(*message == utils.Message{"error","error","error"}) {
       fmt.Printf("\nError: the person you are sending to has not been connected yet.\n")
-    } else {
+      fmt.Printf("Sender: ")
+    } else if (message.Content != "") {
       fmt.Printf("Received message from %q\nMessage: %s\n", message.Sender, message.Content)
+      fmt.Printf("Sender: ")
     }
-
-    fmt.Printf("Sender: ")
   }
 
 }

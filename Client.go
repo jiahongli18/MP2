@@ -8,7 +8,6 @@ import (
 	"os"
   "strings"
   "./utils"
-	"strings"
 )
 
 func main() {
@@ -18,7 +17,7 @@ func main() {
 		fmt.Println("Please provide host:port and the username.")
 		return
 	}
-	fmt.Print("Type EXIT if you want to leave. Press anything else to continue.\n")
+	fmt.Print("Type EXIT if you want to leave.\n")
 	//connect to provided host:post via the net library
 	c := TCPDial(arguments)
   channel := make(chan string)

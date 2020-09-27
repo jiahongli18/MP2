@@ -10,11 +10,11 @@ import (
 	"./utils"
 )
 
-var m = make(map[string]net.Conn)
-
 func main() {
+	var m = make(map[string]net.Conn)
+
 	channel := make(chan string)
-	go startServer()
+	go startServer(m)
 	go exit(channel)
 	signal := <-channel
 	if signal == "EXIT" {
@@ -23,7 +23,7 @@ func main() {
 	}
 }
 
-func startServer() {
+func startServer(m map[string]net.Conn) {
 	//Scan and Parse in line argument for the port number
 	arguments := os.Args
 	if len(arguments) == 1 {

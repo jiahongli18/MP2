@@ -12,11 +12,11 @@ import (
 )
 
 func main() {
-	channel := make(chan string)
+	channel := make(chan string, 1)
 	//channel2 := make(chan string)
 
 	//TODO: Sends the Exit signal from exit to startServer
-	go startServer()
+	go startServer(channel)
 	go exit(channel)
 
 	if <-channel == "EXIT"{
@@ -24,7 +24,7 @@ func main() {
 	}
 }
 
-func startServer() (){
+func startServer(channel chan string ) (){
 	//Scan and Parse in line argument for the port number
 	arguments := os.Args
 	if len(arguments) != 2 {
@@ -56,43 +56,48 @@ func startServer() (){
 
 		netData, _ := bufio.NewReader(c).ReadString('\n')
 		username = netData
-		fmt.Print(username)
+		//fmt.Print(username)
 		m[username] = c
 
-		signal := "EX"
-		//signal := <-channel
+		signal := "EXIT"
+		//fmt.Printf(signal)
+		//signal = <-channel
+
 		go handleConnection(c, m, signal)
 	}
 }
 
 //handleConnection handles communication between the clients, checks if the receivers are connected, and delivers the message
 func handleConnection(c net.Conn,m map[string]net.Conn, signal string){
+	fmt.Printf("")
 	for {
 		decoder := gob.NewDecoder(c) //initialize gob decoder
 		message := new(utils.Message)
 		_ = decoder.Decode(message)
-		if signal != "EXIT"{
-			if receiverChannel, ok := m[message.Receiver]; ok {
-				// fmt.Println(receiverChannel, "is in map")
-				encoder := gob.NewEncoder(receiverChannel)
-				msg := utils.Message{message.Sender, message.Receiver, message.Content}
-				encoder.Encode(msg)
-			} else {
-				encoder := gob.NewEncoder(c)
-				msg := utils.Message{"error", "error", "error"}
-				encoder.Encode(msg)
-			}
-		} else{
-			//TODO: Sends the termination signal to all the connected clients
+
+		if receiverChannel, ok := m[message.Receiver]; ok {
+			// fmt.Println(receiverChannel, "is in map")
+			encoder := gob.NewEncoder(receiverChannel)
+			msg := utils.Message{message.Sender, message.Receiver, message.Content}
+			encoder.Encode(msg)
+		} else {
+			encoder := gob.NewEncoder(c)
+			msg := utils.Message{"error", "error", "error"}
+			encoder.Encode(msg)
+		}
+		 /*if signal != "EXIT"{
+		else{
+			//TODO:Sends the termination signal to all the connected clients
+			fmt.Print("m")
 			for _, receiverChannel:= range m{
-				encoder := gob.NewEncoder(receiverChannel)
-				msg :=utils.Message{"STOP", "STOP", "STOP"}
-				encoder.Encode(msg)
-			}
+				//encoder := gob.NewEncoder(receiverChannel)
+				fmt.Print(receiverChannel)
+				//msg :=utils.Message{"STOP", "STOP", "STOP"}
+				//encoder.Encode(msg)
+			}*/
 		}
 
 	}
-}
 
 
 //Exit the server program after getting the user command

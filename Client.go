@@ -44,10 +44,11 @@ func listen(c net.Conn){
 	  _ = decoder.Decode(message)
 
 	  //TODO:Receive the termination signal and stop listening
-	  if (*message == utils.Message{"STOP", "STOP", "STOP"}){
+	  /*if (*message == utils.Message{"STOP", "STOP", "STOP"}){
 	  	fmt.Print("hi")
 	  	return
-	  } else if(*message == utils.Message{"error", "error", "error"}) {
+	  }*/
+	  if(*message == utils.Message{"error", "error", "error"}) {
 		  fmt.Printf("\nError: the person you are sending to has not been connected yet.\n")
 		  fmt.Printf("Type EXIT or enter Sender: ")
 	  } else {

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"./utils"
+	"bufio"
 	"encoding/gob"
 	"fmt"
 	"net"
 	"os"
-	"bufio"
 	"strings"
-	"./utils"
 )
 
 func main() {
@@ -25,6 +25,7 @@ func main() {
 		exitAllClients(m)
 		return
 	}
+
 }
 
 //This function creates the TCP connection and listen on provided port for requests.
@@ -55,24 +56,25 @@ func startServer(m map[string]net.Conn) {
 			fmt.Println(err)
 			return
 		}
-		
+
 		netData, _ := bufio.NewReader(c).ReadString('\n')
 		username = netData
 		m[username] = c
-
+		fmt.Print(&c)
 		//Call a goroutine to handle the communication so that the server can support handling multiple concurrent clients.
 		go handleConnection(c, m)
 	}
 }
 
 //Listens on incoming requests from each client, redirects message to the receiver by iterating through map to find the associating channel.
-func handleConnection(c net.Conn,m map[string]net.Conn) {
+func handleConnection(c net.Conn, m map[string]net.Conn) {
 	for {
 		decoder := gob.NewDecoder(c) //initialize gob decoder
 		message := new(utils.Message)
 		_ = decoder.Decode(message)
 
 		if receiverChannel, ok := m[message.Receiver]; ok {
+			//Encodes the message if the client is connected
 			encoder := gob.NewEncoder(receiverChannel)
 			msg := utils.Message{message.Sender, message.Receiver, message.Content}
 			encoder.Encode(msg)
@@ -85,13 +87,13 @@ func handleConnection(c net.Conn,m map[string]net.Conn) {
 	}
 }
 
-//Send message to all clients in the map to terminate
+//Send termination signal to all clients in the map to terminate
 func exitAllClients(m map[string]net.Conn) {
 	for _, receiverChannel := range m {
-        encoder := gob.NewEncoder(receiverChannel)
+		encoder := gob.NewEncoder(receiverChannel)
 		msg := utils.Message{"EXIT", "EXIT", "EXIT"}
 		encoder.Encode(msg)
-    }
+	}
 }
 
 //Read user input for "EXIT" command, upon receiving, send signal back to main thread to exit
@@ -102,10 +104,9 @@ func exit(channel chan string) {
 		cmd, _ = reader.ReadString('\n')
 		if strings.TrimSpace(cmd) == "EXIT" {
 			fmt.Println("Server is exiting...")
-			//Sends the termination signal to all the connected clients
+			//Sends the termination signal to the main thread
 			channel <- "EXIT"
 			return
 		}
 	}
 }
-

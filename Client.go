@@ -57,6 +57,7 @@ func listen(c net.Conn, channel chan string){
       fmt.Printf("Sender: ")
     } else if (*message == utils.Message{"EXIT","EXIT","EXIT"}) {
       c.Close()
+      os.Exit(0)
       channel <- "EXIT"
     } else if (message.Content != "") {
       fmt.Printf("Received message from %q\nMessage: %s\n", strings.TrimSpace(message.Sender), strings.TrimSpace(message.Content))
